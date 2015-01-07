@@ -189,12 +189,17 @@ define( [ "jquery", "../widget", "../core", "../animationComplete", "../navigati
 				$el = this.element;
 
 			if ( this._useTransition( notransition ) ) {
+				this._animationInProgress = "show";
 				$el
 					.removeClass( "out " + hideClass )
 					.addClass( "in" )
-					.animationComplete(function () {
-						$el.removeClass( "in" );
-					});
+					.animationComplete( $.proxy( function () {
+						if ( this._animationInProgress === "show" ) {
+							this._animationInProgress = false;
+
+							$el.removeClass( "in" );
+						}
+					}, this ) );
 			}
 			else {
 				$el.removeClass( hideClass );
@@ -209,12 +214,17 @@ define( [ "jquery", "../widget", "../core", "../animationComplete", "../navigati
 				outclass = "out" + ( this.options.transition === "slide" ? " reverse" : "" );
 
 			if ( this._useTransition( notransition ) ) {
+				this._animationInProgress = "hide";
 				$el
 					.addClass( outclass )
 					.removeClass( "in" )
-					.animationComplete(function() {
-						$el.addClass( hideClass ).removeClass( outclass );
-					});
+					.animationComplete( $.proxy( function() {
+						if ( this._animationInProgress === "hide" ) {
+							this._animationInProgress = false;
+
+							$el.addClass( hideClass ).removeClass( outclass );
+						}
+					}, this ) );
 			}
 			else {
 				$el.addClass( hideClass ).removeClass( outclass );
