@@ -367,12 +367,136 @@
 
 		        ok( $.testHelper.domEqual( destroyed, unEnhanced ),
 		        	"unEnhanced equals destroyed" );
-		        start();
-			},
-			function() {
 				$( ":mobile-pagecontainer" ).pagecontainer( "change", "#default" );
-			}
+			},
+			start
 		]);
 	});
 
+	// Create a scope for holding variables for this module
+	( function() {
+
+		var callSequence, recordCalls, toolbar, testPageClone,
+			originalAddClass = $.fn.addClass,
+			originalRemoveClass = $.fn.removeClass,
+			testPage = $( "#stale-animation-test-page" ).remove();
+
+		module( "stale animation is ignored", {
+			setup: function() {
+				recordCalls = false;
+				callSequence = [];
+				testPageClone = testPage.clone();
+				toolbar = testPageClone.appendTo( "body" ).children( "#stale-animation-test" );
+
+				$.fn.addClass = function() {
+					if ( this.length && this[ 0 ] === toolbar[ 0 ] && recordCalls ) {
+						callSequence.push({
+							addClass: Array.prototype.slice.call( arguments )
+						});
+					}
+					return originalAddClass.apply( this, arguments );
+				};
+				$.fn.removeClass = function() {
+					if ( this.length && this[ 0 ] === toolbar[ 0 ] && recordCalls ) {
+						callSequence.push({
+							removeClass: Array.prototype.slice.call( arguments )
+						});
+					}
+					return originalRemoveClass.apply( this, arguments );
+				};
+			},
+			teardown: function() {
+				testPageClone.remove();
+				$.fn.addClass = originalAddClass;
+				$.fn.removeClass = originalRemoveClass;
+				scrollUp();
+			}
+		});
+
+		asyncTest( "hide() followed by show(): stale animationComplete() handler is ignored",
+			function() {
+				var expectedCallSequence = [
+
+					// These are called synchronously from hide
+					{ addClass: [ "out reverse" ] },
+					{ removeClass: [ "in" ] },
+
+					// These are called synchronously from show
+					{ removeClass: [ "out ui-fixed-hidden" ] },
+					{ addClass: [ "in" ] },
+
+					// This is called asynchronously from show()'s animationComplete handler
+					{ removeClass: [ "in" ] }
+				];
+
+				expect( 1 );
+
+				$.testHelper.pageSequence([
+					function() {
+						$( ":mobile-pagecontainer" )
+							.pagecontainer( "change", "#stale-animation-test-page" );
+					},
+					function() {
+						scrollDown();
+						recordCalls = true;
+						toolbar.toolbar( "hide" );
+						toolbar.toolbar( "show" );
+
+						// Give the animations some time
+						setTimeout( function() {
+							recordCalls = false;
+							deepEqual( callSequence, expectedCallSequence,
+								"Calls to addClass() and removeClass() made by stale " +
+									"animationComplete() handler are not present" );
+							$.mobile.back();
+						}, 2000 );
+					},
+					start
+				]);
+			});
+
+		asyncTest( "show() followed by hide(): stale animationComplete() handler is ignored",
+			function() {
+				var expectedCallSequence = [
+
+					// These are called synchronously from show
+					{ removeClass: [ "out ui-fixed-hidden" ] },
+					{ addClass: [ "in" ] },
+
+					// These are called synchronously from hide
+					{ addClass: [ "out reverse" ] },
+					{ removeClass: [ "in" ] },
+
+					// These are called asynchronously from hide()'s animationComplete handler
+					{ addClass: [ "ui-fixed-hidden" ] },
+					{ removeClass: [ "out reverse" ] },
+				];
+
+				expect( 1 );
+
+				$.testHelper.pageSequence([
+					function() {
+						$( ":mobile-pagecontainer" )
+							.pagecontainer( "change", "#stale-animation-test-page" );
+					},
+					function() {
+						scrollDown();
+						recordCalls = true;
+						toolbar.toolbar( "show" );
+						toolbar.toolbar( "hide" );
+
+						// Give the animations some time
+						setTimeout( function() {
+							recordCalls = false;
+							deepEqual( callSequence, expectedCallSequence,
+								"Calls to addClass() and removeClass() made by stale " +
+									"animationComplete() handler are not present" );
+							$.mobile.back();
+						}, 2000 );
+					},
+					start
+				]);
+			});
+
+	})();
 })(jQuery);
