@@ -373,6 +373,12 @@
 		]);
 	});
 
+	// It is insufficient to check the final assortment of classes when ascertaining that the stale
+	// .animationComplete() handler does not do anything, because in the show/hide case the
+	// final assortment of classes happens to be correct. Thus, we must intercept calls to
+	// .addClass() and .removeClass() and make sure that only calls associated with non-stale
+	// .animationComplete() handlers take place.
+	//
 	// Create a scope for holding variables for this module
 	( function() {
 
@@ -387,6 +393,8 @@
 				callSequence = [];
 				testPageClone = testPage.clone();
 				toolbar = testPageClone.appendTo( "body" ).children( "#stale-animation-test" );
+
+				scrollUp();
 
 				$.fn.addClass = function() {
 					if ( this.length && this[ 0 ] === toolbar[ 0 ] && recordCalls ) {
@@ -448,10 +456,12 @@
 							deepEqual( callSequence, expectedCallSequence,
 								"Calls to addClass() and removeClass() made by stale " +
 									"animationComplete() handler are not present" );
-							$.mobile.back();
+							console.log( "hide/show: " + toolbar.attr( "class" ) );
+
+							// Conclude test after having gone back to the main page
+							$.testHelper.pageSequence([ function() { $.mobile.back(); }, start ]);
 						}, 2000 );
-					},
-					start
+					}
 				]);
 			});
 
@@ -480,6 +490,8 @@
 							.pagecontainer( "change", "#stale-animation-test-page" );
 					},
 					function() {
+						toolbar.toolbar( "hide" );
+
 						scrollDown();
 						recordCalls = true;
 						toolbar.toolbar( "show" );
@@ -491,10 +503,12 @@
 							deepEqual( callSequence, expectedCallSequence,
 								"Calls to addClass() and removeClass() made by stale " +
 									"animationComplete() handler are not present" );
-							$.mobile.back();
+							console.log( "show/hide: " + toolbar.attr( "class" ) );
+
+							// Conclude test after having gone back to the main page
+							$.testHelper.pageSequence([ function() { $.mobile.back(); }, start ]);
 						}, 2000 );
-					},
-					start
+					}
 				]);
 			});
 
