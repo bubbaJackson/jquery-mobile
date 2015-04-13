@@ -74,7 +74,7 @@ define( [ "jquery", "../vmouse", "../support/touch" ], function( jQuery ) {
 
 					// ONLY trigger a 'tap' event if the start target is
 					// the same as the stop target.
-					if ( !isTaphold && origTarget === event.target ) {
+					if ( !isTaphold ) {
 						triggerCustomEvent( thisObject, "tap", event );
 					} else if ( isTaphold ) {
 						event.preventDefault();
@@ -103,16 +103,16 @@ define( [ "jquery", "../vmouse", "../support/touch" ], function( jQuery ) {
 	$.event.special.swipe = {
 
 		// More than this horizontal displacement, and we will suppress scrolling.
-		scrollSupressionThreshold: 30,
+		scrollSupressionThreshold: 60,
 
 		// More time than this, and it isn't a swipe.
 		durationThreshold: 1000,
 
 		// Swipe horizontal displacement must be more than this.
-		horizontalDistanceThreshold: 30,
+		horizontalDistanceThreshold: 60,
 
 		// Swipe vertical displacement must be less than this.
-		verticalDistanceThreshold: 30,
+		verticalDistanceThreshold: 60,
 
 		getLocation: function ( event ) {
 			var winPageX = window.pageXOffset,
